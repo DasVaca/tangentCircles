@@ -26,7 +26,7 @@ ctxTriangle.canvas.width = C_WIDTH;
 ctxCircles.font = "30px Arial";
 
 let A, B, C;
-let angleA;
+let angleA, angleB, angleC;
 
 function refreshCirclesProperties() {
     let radii = [], color = [], names = ['A', 'B', 'C'];
@@ -50,11 +50,13 @@ function drawCircles() {
     let AC = A.rad + C.rad;
     let BC = B.rad + C.rad;
 
-    angleA = Math.acos((AB**2 + AC**2 - BC**2)/(2*AB*AC)) / 2;
+    angleA = Math.acos((AB**2 + AC**2 - BC**2)/(2*AB*AC));
+    angleB = Math.acos((AB**2 + BC**2 - AC**2)/(2*AB*BC));
+    angleC = 2*Math.PI - angleA - angleB;
 
-    A.center = Point(1.5*A.rad, 0.5*C_WIDTH);
-    B.center = Point(A.center.y + AB*Math.cos(angleA), A.center.x - AB*Math.sin(angleA));
-    C.center = Point(A.center.y + AC*Math.cos(angleA), A.center.x + AC*Math.sin(angleA));
+    B.center = Point(AB + A.rad, 2*B.rad);
+    A.center = Point(B.center.y - AB * Math.sin(angleB), AB * Math.cos(angleB) + B.center.x);
+    C.center = Point(B.center.y, BC + B.center.x);
 
     [A, B, C].forEach(c => {
         ctxCircles.strokeStyle = c.color;
@@ -74,15 +76,12 @@ document.querySelector("#show-tangent-abc").addEventListener("change", (e) => {
     let AB = A.rad + B.rad;
     let AC = A.rad + C.rad;
     let BC = B.rad + C.rad;
-    let angleB = Math.acos((AB**2 + BC**2 - AC**2)/(2*AB*BC)) / 2;
-    let angleComplement = Math.PI - angleB;
 
     // Calculate Tangent Points
-    let tAB = Point(A.rad * Math.cos(angleA) + A.center.y, A.center.x - A.rad * Math.sin(angleA));
-    let tAC = Point(A.rad * Math.cos(angleA) + A.center.y, A.center.x + A.rad * Math.sin(angleA));
-    let tBC = Point(B.rad * Math.cos(angleComplement) + B.center.y, B.center.x + B.rad * Math.sin(angleComplement));
+    let tAB = Point(B.center.y - B.rad * Math.sin(angleB), B.center.x + B.rad * Math.cos(angleB));
+    let tAC = Point(C.center.y + C.rad * Math.sin(angleC), C.center.x + C.rad * Math.cos(angleC));
+    let tBC = Point(B.center.y, B.center.x + B.rad);
 
-    console.log({angleComplement, tBC});
     // Draw
     ctxTangentPoints.beginPath();
     ctxTangentPoints.fillRect(tAB.x, tAB.y, 5, 5);
