@@ -6,24 +6,13 @@ function Point(y, x) { return {y, x}; };
 function rInt(min, max) { return Math.floor(Math.random() * (max-min)); };
 function Circle(name, center, rad, color) { return {name, center, rad, color};};
 
-const cCircles = document.querySelector("#canvas-circles-abc");
-const ctxCircles = cCircles.getContext("2d");
+const c = document.querySelector("canvas");
+const ctx = c.getContext("2d");
 
-const cTangentPoints = document.querySelector("#canvas-tangent-points-abc");
-const ctxTangentPoints = cTangentPoints.getContext("2d");
+ctx.canvas.height = C_HEIGHT;
+ctx.canvas.width = C_WIDTH;
 
-const cTriangle = document.querySelector("#canvas-triangle-abc");
-const ctxTriangle = cTriangle.getContext("2d");
-
-ctxCircles.canvas.height = C_HEIGHT;
-ctxTangentPoints.canvas.height = C_HEIGHT;
-ctxTriangle.canvas.height = C_HEIGHT;
-
-ctxCircles.canvas.width = C_WIDTH;
-ctxTangentPoints.canvas.width = C_WIDTH;
-ctxTriangle.canvas.width = C_WIDTH;
-
-ctxCircles.font = "30px Arial";
+ctx.font = "30px Arial";
 
 let A, B, C;
 let angleA, angleB, angleC;
@@ -36,8 +25,6 @@ function refreshCirclesProperties() {
 }
 
 function drawCircles() {
-    ctxCircles.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-
     let properties = refreshCirclesProperties();
     [A, B, C] = (() => {
         let circles = [];
@@ -59,20 +46,15 @@ function drawCircles() {
     C.center = Point(B.center.y, BC + B.center.x);
 
     [A, B, C].forEach(c => {
-        ctxCircles.strokeStyle = c.color;
-        ctxCircles.beginPath();
-        ctxCircles.arc(c.center.x, c.center.y, c.rad, 0, 6.3);
-        ctxCircles.fillText(c.name, c.center.x-1, c.center.y+1);
-        ctxCircles.stroke();
+        ctx.strokeStyle = c.color;
+        ctx.beginPath();
+        ctx.arc(c.center.x, c.center.y, c.rad, 0, 6.3);
+        ctx.fillText(c.name, c.center.x-1, c.center.y+1);
+        ctx.stroke();
     });
 }
 
-document.querySelector("#show-tangent-abc").addEventListener("change", (e) => {
-    if (!e.target.checked) {
-        ctxTangentPoints.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-        return;
-    }
-    // Cosine law
+function drawTangentPoints () {
     let AB = A.rad + B.rad;
     let AC = A.rad + C.rad;
     let BC = B.rad + C.rad;
@@ -83,27 +65,53 @@ document.querySelector("#show-tangent-abc").addEventListener("change", (e) => {
     let tBC = Point(B.center.y, B.center.x + B.rad);
 
     // Draw
-    ctxTangentPoints.beginPath();
-    ctxTangentPoints.fillRect(tAB.x, tAB.y, 5, 5);
-    ctxTangentPoints.fillRect(tAC.x, tAC.y, 5, 5);
-    ctxTangentPoints.fillRect(tBC.x, tBC.y, 5, 5);
-    ctxTangentPoints.stroke();
-});
+    ctx.beginPath();
+    ctx.fillRect(tAB.x, tAB.y, 5, 5);
+    ctx.fillRect(tAC.x, tAC.y, 5, 5);
+    ctx.fillRect(tBC.x, tBC.y, 5, 5);
+    ctx.stroke();
+}
 
-document.querySelector("#show-triangle-abc").addEventListener("change", e => {
-    if (!e.target.checked) {
-        ctxTriangle.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-        return;
+function drawTriangle () {
+    ctx.beginPath();
+    ctx.moveTo(A.center.x, A.center.y);
+    ctx.lineTo(C.center.x, C.center.y);
+    ctx.lineTo(B.center.x, B.center.y);
+    ctx.lineTo(A.center.x, A.center.y);
+    ctx.stroke();
+}
+
+function drawCenters () {
+    ctx.beginPath();
+    
+    [A, B, C].forEach((circle) => {
+        ctx.fillStyle = circle.color;
+        ctx.fillRect(circle.center.x, circle.center.y, 5, 5);
+    });
+}
+
+function refreshScreen() {
+    ctx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
+    if (document.querySelector("#show-circles").checked) {
+        drawCircles();
     }
+    if (document.querySelector("#show-tangent-points").checked) {
+        drawTangentPoints();
+    }
+    if (document.querySelector("#show-centers").checked) {
+        drawCenters();
+    }
+    if(document.querySelector("#show-triangle").checked) {
+        drawTriangle();
+    }
+}
 
-    ctxTriangle.beginPath();
-    ctxTriangle.moveTo(A.center.x, A.center.y);
-    ctxTriangle.lineTo(C.center.x, C.center.y);
-    ctxTriangle.lineTo(B.center.x, B.center.y);
-    ctxTriangle.lineTo(A.center.x, A.center.y);
-    ctxTriangle.stroke();
-});
+// Default checked options
+document.querySelector("#show-circles").checked = true;
 
-document.querySelector("button").addEventListener("click", () => drawCircles());
 
-drawCircles();
+// Events
+document.querySelector("button").addEventListener("click", refreshScreen);
+document.querySelectorAll("input[type=checkbox]").forEach((checkbox) => checkbox.addEventListener("change", refreshScreen));
+
+refreshScreen();
