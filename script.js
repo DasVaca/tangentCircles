@@ -16,19 +16,17 @@ ctx.font = "30px Arial";
 
 let A, B, C;
 let angleA, angleB, angleC;
+let tAB, tAC, tBC;
 
 function refreshCirclesProperties() {
     let radii = [], color = [], names = ['A', 'B', 'C'];
     document.querySelectorAll("input[type=number]").forEach(e => radii.push(parseInt(e.value) || DFAULT_RADII));
     document.querySelectorAll("input[type=color]").forEach(c => color.push(c.value || DFAULT_COLOR));
-    return radii.map((r, i) => [names[i], r, color[i]]);
-}
-
-function drawCircles() {
-    let properties = refreshCirclesProperties();
+    
     [A, B, C] = (() => {
         let circles = [];
-        properties.forEach(c => circles.push(Circle(c[0], Point(0,0), c[1], c[2])));
+        radii.map((r, i) => [names[i], r, color[i]])
+            .forEach(c => circles.push(Circle(c[0], Point(0,0), c[1], c[2])));
         return circles;
     })();
 
@@ -45,6 +43,13 @@ function drawCircles() {
     A.center = Point(B.center.y - AB * Math.sin(angleB), AB * Math.cos(angleB) + B.center.x);
     C.center = Point(B.center.y, BC + B.center.x);
 
+    // Calculate Tangent Points
+    tAB = Point(B.center.y - B.rad * Math.sin(angleB), B.center.x + B.rad * Math.cos(angleB));
+    tAC = Point(C.center.y + C.rad * Math.sin(angleC), C.center.x + C.rad * Math.cos(angleC));
+    tBC = Point(B.center.y, B.center.x + B.rad);
+}
+
+function drawCircles() {
     [A, B, C].forEach(c => {
         ctx.strokeStyle = c.color;
         ctx.beginPath();
@@ -55,16 +60,6 @@ function drawCircles() {
 }
 
 function drawTangentPoints () {
-    let AB = A.rad + B.rad;
-    let AC = A.rad + C.rad;
-    let BC = B.rad + C.rad;
-
-    // Calculate Tangent Points
-    let tAB = Point(B.center.y - B.rad * Math.sin(angleB), B.center.x + B.rad * Math.cos(angleB));
-    let tAC = Point(C.center.y + C.rad * Math.sin(angleC), C.center.x + C.rad * Math.cos(angleC));
-    let tBC = Point(B.center.y, B.center.x + B.rad);
-
-    // Draw
     ctx.beginPath();
     ctx.fillRect(tAB.x, tAB.y, 5, 5);
     ctx.fillRect(tAC.x, tAC.y, 5, 5);
@@ -90,8 +85,32 @@ function drawCenters () {
     });
 }
 
+function drawCircumcircle() {
+    let [x1, y1] = [tAB.x, tAB.y];
+    let [x2, y2] = [tBC.x, tBC.y];
+    let [x3, y3] = [tAC.x, tAC.y];
+
+    let a1 = x1**2 + y1**2;
+    let a2 = x2**2 + y2**2;
+    let a3 = x3**2 + y3**2;
+
+    let d12 = x1 - x2;
+    let d23 = x2 - x3;
+    let d31 = x3 - x1;
+
+    let y = (a1*d23 + a2*d31 + a3*d12) / (2*(y1*d23 + y2*d31 + y3*d12));
+    let x = (2*y*(y2 - y3) + a3 - a2) / (2*(x3 - x2));
+    let r = Math.sqrt((x1 - x)**2 + (y1 - y)**2);
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 6.3);
+    ctx.stroke();
+}
+
 function refreshScreen() {
     ctx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
+    refreshCirclesProperties();
+
     if (document.querySelector("#show-circles").checked) {
         drawCircles();
     }
@@ -104,11 +123,13 @@ function refreshScreen() {
     if(document.querySelector("#show-triangle").checked) {
         drawTriangle();
     }
+    if(document.querySelector("#show-circumcircle").checked) {
+        drawCircumcircle();
+    }
 }
 
 // Default checked options
 document.querySelector("#show-circles").checked = true;
-
 
 // Events
 document.querySelector("button").addEventListener("click", refreshScreen);
